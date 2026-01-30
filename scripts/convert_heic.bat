@@ -4,7 +4,7 @@ REM Windows batch script to convert HEIC images
 REM This script runs from the scripts directory
 
 echo ======================================
-echo HEIC Image Converter Tool
+echo Image Converter Tool
 echo ======================================
 echo.
 
@@ -122,7 +122,7 @@ if /i "%VERBOSE%"=="y" (
 REM Run the converter
 echo.
 echo ======================================
-echo Converting HEIC images to %FORMAT_NAME%
+echo Converting images to %FORMAT_NAME%
 echo ======================================
 echo.
 

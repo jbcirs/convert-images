@@ -2,13 +2,16 @@
 """
 Image Converter Tool
 
-This script converts images between different formats (HEIC, JPG, PNG to PDF, PNG, or JPG).
+Converts images between formats. Supported inputs: HEIC, HEIF, AVIF, JPG/JPEG,
+PNG, BMP, TIFF/TIF, GIF (first frame), WebP, ICO, PPM, PGM, PBM, TGA.
+Output formats: PDF, PNG, or JPG/JPEG.
 Place image files in the images/source folder and they will be converted to the images/output folder.
 """
 
 import os
 import glob
 import logging
+import time
 from pathlib import Path
 from datetime import datetime
 import argparse
@@ -110,9 +113,18 @@ def get_image_files(source_folder):
         list: List of image file paths sorted alphabetically
     """
     patterns = [
-        '*.heic', '*.HEIC', '*.heif', '*.HEIF',  # HEIC/HEIF formats
-        '*.jpg', '*.JPG', '*.jpeg', '*.JPEG',      # JPEG formats
-        '*.png', '*.PNG'                            # PNG formats
+        '*.heic', '*.HEIC', '*.heif', '*.HEIF',        # HEIC/HEIF formats
+        '*.avif', '*.AVIF',                              # AVIF format
+        '*.jpg', '*.JPG', '*.jpeg', '*.JPEG',            # JPEG formats
+        '*.png', '*.PNG',                                 # PNG formats
+        '*.bmp', '*.BMP',                                 # BMP format
+        '*.tiff', '*.TIFF', '*.tif', '*.TIF',            # TIFF formats
+        '*.gif', '*.GIF',                                 # GIF format (first frame)
+        '*.webp', '*.WEBP',                               # WebP format
+        '*.ico', '*.ICO',                                 # ICO format
+        '*.ppm', '*.PPM', '*.pgm', '*.PGM',              # PPM/PGM formats
+        '*.pbm', '*.PBM',                                 # PBM format
+        '*.tga', '*.TGA',                                 # TGA format
     ]
     image_files = []
     
@@ -136,9 +148,15 @@ def convert_image_to_format(image_path, output_format='PNG', quality=95):
         tuple: (PIL.Image, exif_data) or (None, None) if conversion fails
     """
     try:
-        logging.info(f"Loading image file: {os.path.basename(image_path)}")
+        file_start = time.monotonic()
+        input_size = os.path.getsize(image_path)
+        logging.info(f"Loading image file: {os.path.basename(image_path)} ({input_size:,} bytes)")
         img = Image.open(image_path)
-        
+
+        detected_format = img.format or "unknown"
+        has_alpha = img.mode in ('RGBA', 'LA', 'PA')
+        logging.info(f"Detected format: {detected_format}, dimensions: {img.size[0]}x{img.size[1]}, mode: {img.mode}, alpha: {has_alpha}")
+
         # Extract EXIF data before any conversions
         exif_data = None
         try:
@@ -147,7 +165,7 @@ def convert_image_to_format(image_path, output_format='PNG', quality=95):
                 logging.debug(f"Extracted EXIF metadata ({len(exif_data)} bytes)")
         except Exception as e:
             logging.debug(f"No EXIF data found or could not extract: {str(e)}")
-        
+
         # Convert to RGB if necessary (required for JPG)
         if output_format.upper() == 'JPG' or output_format.upper() == 'JPEG':
             if img.mode in ('RGBA', 'LA', 'P'):
@@ -159,10 +177,11 @@ def convert_image_to_format(image_path, output_format='PNG', quality=95):
                 img = background
             elif img.mode != 'RGB':
                 img = img.convert('RGB')
-        
-        logging.info(f"Successfully loaded image: {img.size[0]}x{img.size[1]} pixels, mode: {img.mode}")
+
+        elapsed = time.monotonic() - file_start
+        logging.info(f"Successfully loaded image: {img.size[0]}x{img.size[1]} pixels, mode: {img.mode} ({elapsed:.2f}s)")
         return img, exif_data
-        
+
     except Exception as e:
         logging.error(f"Failed to convert {image_path}: {str(e)}")
         return None, None
@@ -228,8 +247,9 @@ def convert_image_to_pdf(image_path, output_path, page_size='LETTER'):
         bool: True if successful, False otherwise
     """
     try:
+        file_start = time.monotonic()
         logging.info(f"Converting to PDF: {os.path.basename(image_path)}")
-        
+
         # Load the image
         img = Image.open(image_path)
         
@@ -272,9 +292,10 @@ def convert_image_to_pdf(image_path, output_path, page_size='LETTER'):
         c.save()
         
         file_size = os.path.getsize(output_path)
-        logging.info(f"Saved PDF file: {os.path.basename(output_path)} ({file_size:,} bytes)")
+        elapsed = time.monotonic() - file_start
+        logging.info(f"Saved PDF file: {os.path.basename(output_path)} ({file_size:,} bytes, {elapsed:.2f}s)")
         return True
-        
+
     except Exception as e:
         logging.error(f"Failed to convert {image_path} to PDF: {str(e)}")
         return False
@@ -308,14 +329,15 @@ def convert_images(source_folder, output_folder, output_format='PNG', quality=95
     
     if not image_files:
         logging.warning(f"No supported image files found in {source_folder}")
-        return {'total': 0, 'successful': 0, 'failed': 0}
-    
+        return {'total': 0, 'successful': 0, 'failed': 0, 'elapsed_seconds': 0.0}
+
     logging.info(f"Found {len(image_files)} image file(s) to convert")
-    
+
     # Convert each file
+    total_start = time.monotonic()
     successful = 0
     failed = 0
-    
+
     for image_file in image_files:
         filename = os.path.basename(image_file)
         base_name = os.path.splitext(filename)[0]
@@ -347,17 +369,25 @@ def convert_images(source_folder, output_folder, output_format='PNG', quality=95
         else:
             failed += 1
     
+    total_elapsed = time.monotonic() - total_start
+    logging.info(f"Total conversion time: {total_elapsed:.2f}s")
+
     return {
         'total': len(image_files),
         'successful': successful,
-        'failed': failed
+        'failed': failed,
+        'elapsed_seconds': total_elapsed
     }
 
 
 def main():
     """Main function to handle command line arguments and execute conversion."""
     parser = argparse.ArgumentParser(
-        description="Convert images (HEIC, JPG, PNG) to PDF, PNG, or JPG format",
+        description=(
+            "Convert images to PDF, PNG, or JPG format.\n"
+            "Supported inputs: HEIC, HEIF, AVIF, JPG/JPEG, PNG, BMP, TIFF/TIF,\n"
+            "GIF (first frame), WebP, ICO, PPM, PGM, PBM, TGA."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -365,7 +395,7 @@ Examples:
   python convert_heic.py -f jpg                    # Convert to JPG
   python convert_heic.py -f pdf                    # Convert to PDF
   python convert_heic.py -f jpg -q 90              # Convert to JPG with 90% quality
-  python convert_heic.py -s /path/to/heic          # Specify source folder
+  python convert_heic.py -s /path/to/images        # Specify source folder
   python convert_heic.py -o /path/to/output        # Specify output folder
   python convert_heic.py -f pdf --page-size A4     # Convert to PDF with A4 page size
   python convert_heic.py -v                        # Enable verbose logging
@@ -445,7 +475,7 @@ Examples:
     
     # Log configuration
     logging.info("=" * 60)
-    logging.info("HEIC Image Converter")
+    logging.info("Image Converter")
     logging.info("=" * 60)
     logging.info(f"Source folder: {args.source}")
     logging.info(f"Output folder: {args.output}")
@@ -478,6 +508,11 @@ Examples:
         if stats['total'] > 0:
             success_rate = (stats['successful'] / stats['total']) * 100
             logging.info(f"Success rate: {success_rate:.1f}%")
+            elapsed = stats.get('elapsed_seconds', 0.0)
+            logging.info(f"Elapsed time: {elapsed:.2f}s")
+            if stats['successful'] > 0:
+                avg_time = elapsed / stats['successful']
+                logging.info(f"Average time per file: {avg_time:.2f}s")
         
         logging.info("=" * 60)
         logging.info(f"Check output folder: {args.output}")

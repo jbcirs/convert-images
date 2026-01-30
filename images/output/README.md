@@ -27,7 +27,7 @@ The output format depends on the conversion option you selected:
 ### PDF Format (`.pdf`)
 - **Document format** - Each image becomes a one-page PDF
 - **Print-ready** - Properly sized for standard paper
-- **Page sizes**: Letter (8.5" × 11") or A4 (210mm × 297mm)
+- **Page sizes**: Letter (8.5" x 11") or A4 (210mm x 297mm)
 - **Best for**: Printing, document archival, professional use
 
 ## File Naming
@@ -35,9 +35,10 @@ The output format depends on the conversion option you selected:
 Output files maintain the same base name as the source file:
 
 ```
-Source: IMG_1234.heic  →  Output: IMG_1234.png
-Source: vacation.HEIC  →  Output: vacation.jpg
-Source: photo.heif     →  Output: photo.pdf
+Source: photo.webp    ->  Output: photo.png
+Source: scan.tiff     ->  Output: scan.jpg
+Source: icon.bmp      ->  Output: icon.pdf
+Source: IMG_1234.heic ->  Output: IMG_1234.png
 ```
 
 ## File Organization
@@ -61,16 +62,7 @@ Source: photo.heif     →  Output: photo.pdf
 ### Further Processing
 - **Photo editing**: Use PNG format for maximum quality
 - **Batch operations**: All files are ready for further processing
-- **Archival**: Keep both HEIC originals and PNG/PDF copies
-
-## File Sizes (Typical)
-
-For a 12-megapixel image (4000×3000 pixels):
-- **HEIC original**: ~1.5 MB
-- **PNG output**: ~10-15 MB (lossless)
-- **JPG output (quality 95)**: ~2-3 MB
-- **JPG output (quality 85)**: ~1-1.5 MB
-- **PDF output**: ~2-4 MB (depends on compression)
+- **Archival**: Keep both originals and PNG/PDF copies
 
 ## Troubleshooting
 
@@ -89,23 +81,8 @@ For a 12-megapixel image (4000×3000 pixels):
 - Try opening in a web browser
 - For PDF, install Adobe Reader or use built-in PDF viewer
 
-**Files too large?**
-- Use JPG format with lower quality (70-85 range)
-- PNG is always lossless and larger
-- Consider if you really need maximum quality
-
-## Cleaning Up
-
-- You can safely **delete converted files** to free up space
-- **Original HEIC files** in `../source/` are never touched
-- You can **reconvert** anytime by running the converter again
-
 ## Need Help?
 
 - Check the main **README.md** in the project root
 - Review **log files** in the `../../logs/` folder
 - Run with `-v` flag for verbose debugging output
-
----
-
-**Your converted images are ready to use! 🎉**

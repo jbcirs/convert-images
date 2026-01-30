@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example Usage of HEIC Image Converter
+Example Usage of Image Converter
 
 This script demonstrates how to use the convert_heic module programmatically.
 """
@@ -13,10 +13,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from convert_heic import (
     convert_images,
-    convert_heic_to_image,
-    convert_heic_to_pdf,
+    convert_image_to_format,
+    convert_image_to_pdf,
     save_as_image,
-    get_heic_files,
+    get_image_files,
     setup_logging
 )
 
@@ -37,7 +37,7 @@ def example_1_basic_conversion():
     source_folder = os.path.join(project_root, 'images', 'source')
     output_folder = os.path.join(project_root, 'images', 'output')
     
-    # Convert all HEIC files to PNG
+    # Convert all image files to PNG
     stats = convert_images(
         source_folder=source_folder,
         output_folder=output_folder,
@@ -117,22 +117,22 @@ def example_4_single_file():
     source_folder = os.path.join(project_root, 'images', 'source')
     output_folder = os.path.join(project_root, 'images', 'output')
     
-    # Get all HEIC files
-    heic_files = get_heic_files(source_folder)
-    
-    if not heic_files:
-        print("No HEIC files found in source folder")
+    # Get all image files
+    image_files = get_image_files(source_folder)
+
+    if not image_files:
+        print("No supported image files found in source folder")
         return
-    
+
     # Convert just the first file to PNG
-    heic_file = heic_files[0]
-    filename = os.path.basename(heic_file)
+    image_file = image_files[0]
+    filename = os.path.basename(image_file)
     base_name = os.path.splitext(filename)[0]
-    
+
     print(f"Converting: {filename}")
-    
+
     # Convert to image with metadata
-    img, exif_data = convert_heic_to_image(heic_file, output_format='PNG')
+    img, exif_data = convert_image_to_format(image_file, output_format='PNG')
     
     if img:
         output_path = os.path.join(output_folder, f"{base_name}.png")
@@ -199,26 +199,26 @@ def example_6_batch_processing():
     source_folder = os.path.join(project_root, 'images', 'source')
     output_folder = os.path.join(project_root, 'images', 'output')
     
-    # Get all HEIC files
-    heic_files = get_heic_files(source_folder)
-    
-    if not heic_files:
-        print("No HEIC files found in source folder")
+    # Get all image files
+    image_files = get_image_files(source_folder)
+
+    if not image_files:
+        print("No supported image files found in source folder")
         return
-    
-    print(f"Found {len(heic_files)} HEIC file(s):\n")
-    
+
+    print(f"Found {len(image_files)} image file(s):\n")
+
     results = []
-    
-    for heic_file in heic_files:
-        filename = os.path.basename(heic_file)
+
+    for image_file in image_files:
+        filename = os.path.basename(image_file)
         base_name = os.path.splitext(filename)[0]
-        
+
         # Get file size
-        file_size = os.path.getsize(heic_file)
-        
+        file_size = os.path.getsize(image_file)
+
         # Convert to JPG with metadata
-        img, exif_data = convert_heic_to_image(heic_file, output_format='JPG', quality=90)
+        img, exif_data = convert_image_to_format(image_file, output_format='JPG', quality=90)
         
         if img:
             output_path = os.path.join(output_folder, f"{base_name}.jpg")
@@ -270,7 +270,7 @@ def example_6_batch_processing():
 def main():
     """Run all examples"""
     print("\n" + "=" * 60)
-    print("HEIC Image Converter - Usage Examples")
+    print("Image Converter - Usage Examples")
     print("=" * 60)
     print("\nThis script demonstrates various ways to use the converter.\n")
     

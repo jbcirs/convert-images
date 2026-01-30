@@ -1,23 +1,46 @@
 # Image Converter Tool
 
-A Python utility to convert HEIC/HEIF images to PDF, PNG, or JPG format with comprehensive logging and error handling.
+A Python utility to convert images from 14+ input formats to PDF, PNG, or JPG with per-file timing, metadata logging, and comprehensive error handling.
 
 ## Features
 
+- **14+ input formats**: HEIC, HEIF, AVIF, JPG/JPEG, PNG, BMP, TIFF/TIF, GIF, WebP, ICO, PPM, PGM, PBM, TGA
 - **Multiple output formats**: Convert to PDF, PNG, or JPG
-- **Batch processing**: Convert all HEIC files from a source folder at once
+- **Batch processing**: Convert all image files from a source folder at once
+- **Per-file timing and metadata logging**: Format detection, dimensions, color mode, alpha channel, input file size, elapsed time
 - **Quality control**: Adjustable quality settings for JPG output
 - **PDF customization**: Choose between Letter and A4 page sizes
 - **Automatic setup**: One-command installation of all dependencies
 - **Comprehensive logging**: Debug-level logs saved for troubleshooting
 - **Cross-platform**: Works on Windows, macOS, and Linux
 - **Easy-to-use scripts**: Interactive batch and shell scripts for quick conversion
-- **Clean code**: Well-documented, readable Python code
+
+## Supported Input Formats
+
+| Format | Extensions | Notes |
+|--------|------------|-------|
+| HEIC/HEIF | `.heic`, `.heif` | Via pillow-heif |
+| AVIF | `.avif` | Requires pillow-heif with AVIF support |
+| JPEG | `.jpg`, `.jpeg` | Native Pillow |
+| PNG | `.png` | Native Pillow |
+| BMP | `.bmp` | Native Pillow |
+| TIFF | `.tiff`, `.tif` | First page only for multi-page files |
+| GIF | `.gif` | First frame only |
+| WebP | `.webp` | First frame for animated WebP |
+| ICO | `.ico` | Opens largest available size |
+| PPM | `.ppm` | Netpbm format, native Pillow |
+| PGM | `.pgm` | Netpbm format, native Pillow |
+| PBM | `.pbm` | Netpbm format, native Pillow |
+| TGA | `.tga` | Native Pillow |
+
+Both lowercase and uppercase extensions are accepted.
+
+**Output formats**: PNG, JPG/JPEG, PDF
 
 ## Requirements
 
 - Python 3.7 or higher
-- pillow-heif (for HEIC support)
+- pillow-heif (for HEIC/HEIF/AVIF support)
 - Pillow (PIL) (for image processing)
 - reportlab (for PDF generation)
 
@@ -75,7 +98,7 @@ These scripts will:
 1. Check if dependencies are installed (and run setup if needed)
 2. Ask you to choose the output format (PNG, JPG, or PDF)
 3. Ask for quality/page size settings
-4. Convert all HEIC files from `images/source` to `images/output`
+4. Convert all image files from `images/source` to `images/output`
 
 ### Command Line Usage
 
@@ -99,16 +122,18 @@ python convert_heic.py -f jpg -q 90
 python convert_heic.py -f pdf --page-size a4
 
 # Use custom source and output folders
-  python convert_heic.py -s /path/to/heic/files -o /path/to/output
+python convert_heic.py -s /path/to/images -o /path/to/output
 
 # Enable verbose logging for debugging
 python convert_heic.py -v
 
 # Keep existing files in output folder (don't clear before conversion)
 python convert_heic.py --no-clear
-```#### Command Line Options
+```
 
-- `-s, --source FOLDER`: Source folder containing HEIC files (default: `../images/source`)
+#### Command Line Options
+
+- `-s, --source FOLDER`: Source folder containing image files (default: `../images/source`)
 - `-o, --output FOLDER`: Output folder for converted files (default: `../images/output`)
 - `-f, --format FORMAT`: Output format: `pdf`, `png`, or `jpg` (default: `png`)
 - `-q, --quality QUALITY`: JPG quality from 1-100 (default: 95)
@@ -124,7 +149,7 @@ You can also import and use the converter in your own Python scripts:
 ```python
 from convert_heic import convert_images
 
-# Convert all HEIC files to PNG
+# Convert all image files to PNG
 stats = convert_images(
     source_folder='images/source',
     output_folder='images/output',
@@ -133,6 +158,7 @@ stats = convert_images(
 )
 
 print(f"Converted {stats['successful']} out of {stats['total']} files")
+print(f"Elapsed: {stats['elapsed_seconds']:.2f}s")
 ```
 
 See `src/example_usage.py` for more examples.
@@ -142,11 +168,12 @@ See `src/example_usage.py` for more examples.
 ```text
 convert-images/
 ├── README.md                    # This file
+├── CLAUDE.md                    # Developer reference
 ├── requirements.txt             # Python dependencies
 ├── setup.py                     # Setup script
 ├── LICENSE                      # License file
 ├── images/
-│   ├── source/                  # Place your HEIC files here
+│   ├── source/                  # Place your image files here
 │   │   └── README.md
 │   └── output/                  # Converted files appear here
 │       └── README.md
@@ -162,7 +189,7 @@ convert-images/
 
 ## Workflow
 
-1. **Place HEIC files**: Add your `.heic` or `.heif` files to the `images/source` folder
+1. **Place image files**: Add your images to the `images/source` folder
 2. **Run conversion**: Use either the interactive scripts or command line
 3. **Check output**: Converted files appear in `images/output` with the same base filename
 4. **Review logs**: Check `logs/` folder for detailed conversion information
@@ -170,36 +197,15 @@ convert-images/
 ## How It Works
 
 1. **Cleanup**: Clears the output folder of previous conversions (keeps README)
-2. **File Discovery**: Scans the source folder for all HEIC/HEIF files
-3. **Format Detection**: Automatically detects `.heic`, `.HEIC`, `.heif`, and `.HEIF` extensions
+2. **File Discovery**: Scans the source folder for all supported image files
+3. **Format Detection**: Automatically detects files by extension (14+ formats supported)
 4. **Metadata Extraction**: Preserves EXIF data from source files
-5. **Conversion**: Opens each HEIC file and converts to the target format:
+5. **Conversion**: Opens each image file and converts to the target format:
    - **PNG**: Lossless compression, preserves transparency and EXIF metadata
    - **JPG**: High-quality compression with no subsampling, progressive encoding, and EXIF preservation
    - **PDF**: Creates a PDF document with the image scaled to fit the page
-6. **Logging**: Records all operations, errors, and statistics
+6. **Logging**: Records detected format, dimensions, color mode, alpha channel, input file size, per-file timing, and total elapsed time
 7. **Output**: Saves converted files with the same base name and new extension
-
-## Output Format Details
-
-### PNG (Portable Network Graphics)
-- **Best for**: Photos with transparency, lossless quality needed
-- **File size**: Larger than JPG
-- **Quality**: Lossless (no quality loss)
-- **Transparency**: Preserved
-
-### JPG (JPEG)
-- **Best for**: Photos for web/email, smaller file sizes
-- **File size**: Smallest (adjustable)
-- **Quality**: Lossy (adjustable 1-100, default 95)
-- **Transparency**: Converted to white background
-- **Recommendation**: Use quality 90-95 for excellent quality, 80-85 for good quality/size balance
-
-### PDF (Portable Document Format)
-- **Best for**: Documents, archival, printing
-- **File size**: Medium
-- **Page sizes**: Letter (8.5" x 11") or A4 (210mm x 297mm)
-- **Layout**: Image is centered and scaled to fit page with margins
 
 ## Logging
 
@@ -207,30 +213,37 @@ Every conversion run creates a timestamped log file in the `logs/` folder:
 
 - **Filename format**: `convert_images_YYYYMMDD_HHMMSS.log`
 - **Log levels**: INFO (default) or DEBUG (with `-v` flag)
-- **Contents**: 
+- **Contents**:
   - Source and output paths
   - Configuration settings
-  - Each file being processed
-  - Success/failure status
-  - File sizes
+  - Detected input format, dimensions, color mode, alpha channel
+  - Input file size
+  - Per-file conversion timing
+  - Success/failure status with output file sizes
+  - Total elapsed time and average time per file
   - Error messages with details
-  - Conversion summary statistics
 
 Example log output:
 ```
 2025-11-27 14:30:15 - INFO - Source folder: images/source
 2025-11-27 14:30:15 - INFO - Output format: PNG
-2025-11-27 14:30:15 - INFO - Found 5 HEIC file(s) to convert
-2025-11-27 14:30:15 - INFO - Processing: IMG_1234.heic -> IMG_1234.png
-2025-11-27 14:30:16 - INFO - Successfully loaded image: 4032x3024 pixels
-2025-11-27 14:30:17 - INFO - Saved PNG file: IMG_1234.png (2,845,123 bytes)
+2025-11-27 14:30:15 - INFO - Found 5 image file(s) to convert
+2025-11-27 14:30:15 - INFO - Processing: photo.webp -> photo.png
+2025-11-27 14:30:15 - INFO - Loading image file: photo.webp (245,678 bytes)
+2025-11-27 14:30:15 - INFO - Detected format: WEBP, dimensions: 4032x3024, mode: RGB, alpha: False
+2025-11-27 14:30:16 - INFO - Successfully loaded image: 4032x3024 pixels, mode: RGB (0.85s)
+2025-11-27 14:30:17 - INFO - Saved PNG file: photo.png (2,845,123 bytes)
+...
+2025-11-27 14:30:25 - INFO - Total conversion time: 10.23s
+2025-11-27 14:30:25 - INFO - Elapsed time: 10.23s
+2025-11-27 14:30:25 - INFO - Average time per file: 2.05s
 ```
 
 ## Troubleshooting
 
-### "No HEIC files found"
+### "No supported image files found"
 - Ensure your files are in the `images/source` folder
-- Check that files have `.heic`, `.HEIC`, `.heif`, or `.HEIF` extension
+- Check that files have a supported extension: `.heic`, `.heif`, `.avif`, `.jpg`, `.jpeg`, `.png`, `.bmp`, `.tiff`, `.tif`, `.gif`, `.webp`, `.ico`, `.ppm`, `.pgm`, `.pbm`, `.tga` (or uppercase)
 - Verify folder permissions
 
 ### "Required packages are not installed"
@@ -245,9 +258,10 @@ Example log output:
 
 ### "Failed to convert" errors
 - Check the log file in the `logs/` folder for detailed error messages
-- Ensure HEIC files are not corrupted
+- Ensure image files are not corrupted
 - Try converting one file at a time to isolate the problem
 - Run with `-v` flag for more detailed debugging information
+- For AVIF files: ensure pillow-heif was built with AVIF support
 
 ### Permission errors
 - Ensure you have write permissions in the output directory
@@ -267,33 +281,18 @@ Example log output:
 ## Tips
 
 - **File naming**: Use descriptive names; the output will have the same base name
-- **Batch processing**: The tool processes all HEIC files at once - no need to convert one by one
+- **Batch processing**: The tool processes all image files at once - no need to convert one by one
 - **Quality settings**: For JPG, quality 95 is near-lossless; 85 offers good balance; 70-80 is acceptable for web
-- **Format selection**: 
+- **Format selection**:
   - Use PNG for maximum quality and transparency
   - Use JPG for smallest files and web/email sharing
   - Use PDF for documents and printing
 - **Keep originals**: The source files are never modified or deleted
 - **Check logs**: Always review logs if something seems wrong
 
-## Performance
-
-- Conversion speed depends on:
-  - Image resolution (higher = slower)
-  - Number of files
-  - Output format (PDF is slowest, PNG is fastest)
-  - JPG quality setting (higher = slower)
-  - CPU speed and available RAM
-
-Typical performance on modern hardware:
-- 12MP HEIC image (4000x3000):
-  - To PNG: ~2-3 seconds per image
-  - To JPG: ~2-4 seconds per image  
-  - To PDF: ~3-5 seconds per image
-
 ## Examples
 
-### Example 1: Convert iPhone photos to JPG for email
+### Example 1: Convert mixed-format photos to JPG for email
 ```bash
 cd src
 python convert_heic.py -f jpg -q 85
@@ -314,7 +313,7 @@ python convert_heic.py -f png -v
 ### Example 4: Custom folders with verbose logging
 ```bash
 cd src
-python convert_heic.py -s ~/Pictures/iPhone -o ~/Pictures/Converted -f jpg -q 90 -v
+python convert_heic.py -s ~/Pictures/Mixed -o ~/Pictures/Converted -f jpg -q 90 -v
 ```
 
 ## Contributing
@@ -327,7 +326,7 @@ This project is licensed under the terms specified in the LICENSE file.
 
 ## Acknowledgments
 
-- Uses [pillow-heif](https://github.com/bigcat88/pillow_heif) for HEIC support
+- Uses [pillow-heif](https://github.com/bigcat88/pillow_heif) for HEIC/HEIF/AVIF support
 - Built with [Pillow (PIL)](https://python-pillow.org/) for image processing
 - Uses [ReportLab](https://www.reportlab.com/) for PDF generation
 
@@ -338,7 +337,3 @@ If you encounter any issues:
 2. Review the log files in the `logs/` folder
 3. Run with `-v` flag for verbose output
 4. Open an issue with your log file and error details
-
----
-
-**Happy converting! 📸 ➡️ 🖼️**
