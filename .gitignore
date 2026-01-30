@@ -226,4 +226,6 @@ images/output/*.jpeg
 
 # Keep README files
 !images/source/README.md
-!images/output/README.md
+images/output/README.md
+
+*.DS_Store
